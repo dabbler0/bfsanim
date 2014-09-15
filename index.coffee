@@ -1,6 +1,7 @@
 SQUARE_WIDTH = 50
 ANIMATION_TICK = 100
 
+showGraph = true
 globalAnimationTimeout = null
 
 class Path
@@ -90,15 +91,29 @@ ctx = canvas.getContext '2d'
 canvas.width = canvas.height = 8 * SQUARE_WIDTH
 
 redrawBoard = (visited = {}) ->
+  ctx.clearRect 0, 0, canvas.width, canvas.height
   for i in [0...8]
     for j in [0...8]
       if board.board[i][j].blocked
         ctx.fillStyle = '#f00'
       else if visited[board.board[i][j].id]
-        ctx.fillStyle = if ((i + j) % 2) is 0 then '#335' else '#AAD'
+        ctx.fillStyle = if ((i + j) % 2) is 0 then '#553' else '#DDA'
       else
-        ctx.fillStyle = if ((i + j) % 2) is 0 then '#000' else '#DDD'
+        ctx.fillStyle = if ((i + j) % 2) is 0 then '#888' else '#DDD'
       ctx.fillRect i * SQUARE_WIDTH, j * SQUARE_WIDTH, SQUARE_WIDTH, SQUARE_WIDTH
+
+  if showGraph
+    ctx.strokeStyle = '#00f'
+    ctx.globalAlpha = 0.1
+    for i in [0...8]
+      for j in [0...8] when not board.board[i][j].blocked
+        for node in board.board[i][j].nodes when not node.blocked
+          ctx.beginPath()
+          ctx.moveTo (i + 0.5) * SQUARE_WIDTH, (j + 0.5)* SQUARE_WIDTH
+          ctx.lineTo (node.data[0] + 0.5) * SQUARE_WIDTH, (node.data[1] + 0.5) * SQUARE_WIDTH
+          ctx.stroke()
+    ctx.globalAlpha = 1
+
 
 redrawBoard()
 
@@ -109,12 +124,16 @@ drawPath_raw = (path) ->
   ctx.beginPath()
   ctx.strokeStyle = '#f00'
   ctx.lineWidth = 2
+  ctx.fillStyle = '#f00'
 
   for coord, i in path
     if i is 0
       ctx.moveTo (coord[0] + 0.5) * SQUARE_WIDTH, (coord[1] + 0.5) * SQUARE_WIDTH
     else
       ctx.lineTo (coord[0] + 0.5) * SQUARE_WIDTH, (coord[1] + 0.5) * SQUARE_WIDTH
+
+    ctx.fillRect (coord[0] + 0.45) * SQUARE_WIDTH, (coord[1] + 0.45) * SQUARE_WIDTH,
+      SQUARE_WIDTH * 0.1, SQUARE_WIDTH * 0.1
 
   ctx.stroke()
 
@@ -128,14 +147,81 @@ drawAnimation = (first, last, paths, visited) ->
   for path in paths
     drawPath_raw path.toArray().map (node) -> node.data
 
-canvas.addEventListener 'click', (event) ->
+reanimate = ->
   if globalAnimationTimeout?
     clearTimeout globalAnimationTimeout
+
+  board.animateShortestPath(board.board[0][0], board.board[7][7], ((path) ->
+    drawPath path?.map (node) -> node.data
+  ))
+
+canvas.addEventListener 'click', (event) ->
   redrawBoard()
 
   [x, y] = [Math.floor(event.offsetX / SQUARE_WIDTH), Math.floor(event.offsetY / SQUARE_WIDTH)]
 
   board.board[x][y].blocked ^= true
-  board.animateShortestPath(board.board[0][0], board.board[7][7], ((path) ->
-    drawPath path?.map (node) -> node.data
-  ))
+
+  reanimate()
+
+fps = document.querySelector '#speed'
+
+fps.addEventListener 'input', (event) ->
+  ANIMATION_TICK = 1000 / Number @value
+
+selector = document.querySelector '#presets'
+
+customer = document.querySelector '#custom-rule'
+
+selector.addEventListener 'change', (event) ->
+  customer.style.display = 'none'
+  switch @value
+    when 'king'
+      getAdjacency = (i, j) ->
+        [[i + 1, j], [i - 1, j], [i, j + 1], [i, j - 1],
+         [i + 1, j + 1], [i - 1, j - 1], [i + 1, j - 1], [i - 1, j + 1]]
+    when 'knight'
+      getAdjacency = (i, j) ->
+        [[i + 1, j + 2], [i - 1, j + 2], [i + 2, j + 1], [i + 2, j - 1],
+         [i + 1, j - 2], [i - 1, j - 2], [i - 2, j - 1], [i - 2, j + 1]]
+    when 'custom'
+      customer.style.display = 'block'
+
+  recreateBoard()
+  reanimate()
+
+applier = document.querySelector '#apply'
+rules = document.querySelector '#adj'
+
+generateAdjacencyFunction = (syntax) ->
+  record = []
+  lines = syntax.split '\n'
+  for line in lines
+    record.push line.split(' ').map (str) -> Number str
+
+  return (i, j) ->
+    for mod in record
+      [i + mod[0], j + mod[1]]
+
+recreateBoard = ->
+  markedSquares = []
+
+  for row, i in board.board
+    for cell, j in row when cell.blocked
+      markedSquares.push [i, j]
+
+  board = new Chessboard()
+
+  for square in markedSquares
+    board.board[square[0]][square[1]].blocked = true
+
+applier.addEventListener 'click', (event) ->
+  getAdjacency = generateAdjacencyFunction rules.value
+  recreateBoard()
+
+  reanimate()
+
+showgraph = document.querySelector "#showgraph"
+showgraph.addEventListener 'change', ->
+  showGraph ^= true
+  reanimate()

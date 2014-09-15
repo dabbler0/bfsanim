@@ -1,7 +1,60 @@
 <html>
+  <head>
+    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <style>
+      .centered {
+        text-align: center;
+      }
+      textarea {
+        font-family: monospace;
+      }
+    </style>
+  </head>
   <body>
-    <canvas>
-    </canvas>
+    <div class="container centered">
+      <h1> BFS animation </h1>
+      <div class="container">
+        Click on a square to place an obstacle.
+      </div>
+      <canvas id="board">
+      </canvas>
+    </div>
+    <div class="spacer" style="height:30px;"></div>
+    <div class="container">
+      <div class="form">
+        <div>
+          <input type="checkbox" checked id="showgraph"/> Show Graph
+        </div><br/>
+        <div class="input-group">
+          <span class="input-group-addon">Animation FPS</span>
+          <input class="form-control" id="speed" value="10"/>
+        </div><br/>
+        <div class="input-group">
+          <span class="input-group-addon">Adjacency Rule</span>
+          <select id="presets" class="form-control">
+            <option value="king">King</option>
+            <option value="knight">Knight</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div><br/>
+        <div class="input-group" id="custom-rule" style="display:none;">
+          <span class="input-group-addon">Custom rule</span>
+          <textarea class="form-control" id="adj" rows="8"/>
++1 +1
++1 +0
++1 -1
++0 +1
++0 -1
+-1 +1
+-1 +0
+-1 -1</textarea>
+          <button id="apply" class="btn btn-danger">Apply Adjacency Rule</button>
+        </div><br/>
+      </div>
+      <div class="container centered credits">
+        A hack-per-day by <a href="https://dabbler0.github.io/hack-per-day">Anthony Bau</a>.
+      </div>
+    </div>
     <script src="index.js"></script>
   </body>
 </html>
