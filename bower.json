@@ -1,0 +1,17 @@
+{
+  "name": "anim",
+  "main": "index.js",
+  "version": "0.0.0",
+  "authors": [
+    "dabbler0 <dab1998@gmail.com>"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
